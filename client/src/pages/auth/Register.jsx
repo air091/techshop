@@ -1,11 +1,17 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
-  const [user, setUser] = useState({ email: "", password: "" });
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const registerAPI = async () => {
     try {
@@ -16,7 +22,10 @@ const Register = () => {
       const response = await fetch("http://localhost:8000/api/user/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, password: user.password }),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
       });
       const data = await response.json();
 
@@ -25,7 +34,8 @@ const Register = () => {
         return;
       }
       setSuccess(data.message);
-      setUser(data.user);
+      await loginAPI(formData.email, formData.password);
+      setFormData({ email: "", password: "", confirmPassword: "" });
     } catch (error) {
       console.error(`Register API ${error}`);
     } finally {
@@ -33,21 +43,32 @@ const Register = () => {
     }
   };
 
+  const loginAPI = async () => {
+    await fetch("http://localhost:8000/api/user/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email: formData.email,
+        password: formData.password,
+      }),
+    });
+    navigate("/");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (confirmPassword !== user.password) {
+    if (formData.confirmPassword !== formData.password) {
       setError("Password do not match.");
       return;
     }
-
     await registerAPI();
-    setUser({ email: "", password: "" });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setUser((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -61,6 +82,7 @@ const Register = () => {
           </header>
           <form onSubmit={handleSubmit}>
             {error && <p className="bg-red-200">{error}</p>}
+            {success && <p className="bg-green-200">{success}</p>}
             <div>
               <label htmlFor="email">Email</label>
               <input
@@ -68,7 +90,7 @@ const Register = () => {
                 type="email"
                 autoComplete="off"
                 name="email"
-                value={user.email}
+                value={formData.email}
                 onChange={handleChange}
                 className="border block"
               />
@@ -80,7 +102,7 @@ const Register = () => {
                 type="password"
                 autoComplete="off"
                 name="password"
-                value={user.password}
+                value={formData.password}
                 onChange={handleChange}
                 className="border block"
               />
@@ -90,9 +112,9 @@ const Register = () => {
               <input
                 id="confirm-password"
                 type="password"
-                name="confirm-password"
-                value={user.value}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
                 className="block border"
               />
             </div>
