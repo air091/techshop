@@ -45,7 +45,14 @@ const loginUser = async (request, response) => {
       .setExpirationTime("10m")
       .sign(new TextEncoder().encode(process.env.JWT_SECRET));
 
-    response.status(200).json({ message: "Login successfully.", user, token });
+    response.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 10 * 60 * 1000,
+    });
+
+    response.status(200).json({ message: "Login successfully.", user });
   } catch (error) {
     console.error(`POST (login) /api/user ${error}`);
     response.status(500).json({ message: error });
