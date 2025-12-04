@@ -4,6 +4,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const databaseConnection = require("./storage/database");
 const userRoute = require("./routes/user.routes");
+const errorHandler = require("./middlewares/errorHandler.middleware");
 
 const app = express();
 const PORT = process.env.PORT;
@@ -18,6 +19,8 @@ app.use(cookieParser());
 app.use(express.json());
 
 app.use("/api/user", userRoute);
+
+app.use(errorHandler);
 
 async function startServer() {
   try {
