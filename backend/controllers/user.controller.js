@@ -7,10 +7,26 @@ const { SignJWT } = require("jose");
 const registerUser = async (request, response, next) => {
   try {
     const { email, password } = request.body;
-
     const user = new User({ email, password });
     await user.save();
-    response.status(201).json({ message: "Register successfully.", user });
+
+    const userObj = { ...user.toObject() };
+    delete userObj.password;
+    const token = await SignJWT(userObj)
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("10m")
+      .sign(new TextEncoder().encode(process.env.JWT_SECRET));
+
+    response.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAg: 10 * 60 * 1000,
+    });
+
+    response
+      .status(201)
+      .json({ message: "Register successfully.", user: userObj, token });
   } catch (error) {
     console.error(`POST /api/user/register ${error}`);
     next(error);
@@ -32,7 +48,9 @@ const loginUser = async (request, response, next) => {
         .status(400)
         .json({ message: "Email or password is invalid." });
 
-    const token = await new SignJWT({ email: user.email, role: user.role })
+    const userObj = { ...user.toObject() };
+    delete userObj.password;
+    const token = await new SignJWT(userObj)
       .setProtectedHeader({ alg: "HS256" })
       .setExpirationTime("10m")
       .sign(new TextEncoder().encode(process.env.JWT_SECRET));
@@ -44,7 +62,9 @@ const loginUser = async (request, response, next) => {
       maxAge: 10 * 60 * 1000,
     });
 
-    response.status(200).json({ message: "Login successfully.", user });
+    response
+      .status(200)
+      .json({ message: "Login successfully.", user: userObj, token });
   } catch (error) {
     console.error(`POST /api/user/login ${error}`);
     next(error);
