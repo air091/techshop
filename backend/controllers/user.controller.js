@@ -1,8 +1,11 @@
 require("dotenv/config");
-const mongoose = require("mongoose");
 const User = require("../models/user.model");
 const bcrypt = require("bcrypt");
 const { SignJWT } = require("jose");
+
+const meUser = async (request, response) => {
+  response.status(200).json({ user: request.user });
+};
 
 const registerUser = async (request, response, next) => {
   try {
@@ -131,6 +134,7 @@ const deleteUser = async (request, response, next) => {
 };
 
 module.exports = {
+  meUser,
   registerUser,
   loginUser,
   displayUsers,
